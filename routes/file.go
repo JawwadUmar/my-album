@@ -3,10 +3,9 @@ package routes
 import (
 	"fmt"
 	"net/http"
-	"os"
-	"path/filepath"
 
 	"example.com/my-ablum/models"
+	storage "example.com/my-ablum/storage/1"
 	"github.com/gin-gonic/gin"
 )
 
@@ -28,25 +27,34 @@ func createFile(context *gin.Context) {
 	fileModel.MimeType = fileHeader.Header.Get("Content-Type")
 	fileModel.CreatedBy = context.GetInt64("userId")
 
-	extension := filepath.Ext(fileHeader.Filename)
+	fileModel.StorageKey = fmt.Sprintf("%d/%s", fileModel.CreatedBy, fileModel.FileName)
 
-	fileModel.StorageKey = fmt.Sprintf("%d/%s%s", fileModel.CreatedBy, fileModel.FileName, extension)
+	// filePath := "./storage/" + fileModel.StorageKey
 
-	filePath := "./storage/" + fileModel.StorageKey
+	err = storage.StoreFileInS3(fileHeader, fileModel.StorageKey)
+
+	if err != nil {
+		context.JSON(http.StatusInternalServerError, gin.H{
+			"message": "Problem saving to S3",
+			"error":   err.Error(),
+		})
+
+		return
+	}
 
 	// Create folder if not exists (storage/1/, storage/2/, etc)
-	err = os.MkdirAll(filepath.Dir(filePath), 0755)
-	if err != nil {
-		context.JSON(500, gin.H{"error": "failed to create storage folder"})
-		return
-	}
+	// err = os.MkdirAll(filepath.Dir(filePath), 0755)
+	// if err != nil {
+	// 	context.JSON(500, gin.H{"error": "failed to create storage folder"})
+	// 	return
+	// }
 
-	// Save file to disk
-	err = context.SaveUploadedFile(fileHeader, filePath)
-	if err != nil {
-		context.JSON(500, gin.H{"error": "failed to save file"})
-		return
-	}
+	// // Save file to disk
+	// err = context.SaveUploadedFile(fileHeader, filePath)
+	// if err != nil {
+	// 	context.JSON(500, gin.H{"error": "failed to save file"})
+	// 	return
+	// }
 
 	err = fileModel.Save()
 
