@@ -46,7 +46,7 @@ func (u *User) ValidateCredential() error {
 
 	var passwordHash string
 
-	err := row.Scan(&u.UserId, &passwordHash)
+	err := row.Scan(&u.UserId, &passwordHash) //userId is updated here
 
 	if err != nil {
 		return err

@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"example.com/my-ablum/models"
+	"example.com/my-ablum/utility"
 	"github.com/gin-gonic/gin"
 )
 
@@ -70,7 +71,7 @@ func login(context *gin.Context) {
 	user.Email = loginRequest.Email
 	user.Password = loginRequest.Password
 
-	err = user.ValidateCredential()
+	err = user.ValidateCredential() //UserId is updated here
 
 	if err != nil {
 		context.JSON(http.StatusBadRequest, gin.H{
@@ -80,6 +81,22 @@ func login(context *gin.Context) {
 
 		return
 	}
+
+	token, err := utility.GenerateToken(user.Email, user.UserId)
+
+	if err != nil {
+		context.JSON(http.StatusInternalServerError, gin.H{
+			"message": "Some problem in generating jwt token",
+		})
+
+		return
+	}
+
+	context.JSON(http.StatusOK, gin.H{
+		"message": "Successfully login",
+		"token":   token,
+		"id":      user.UserId,
+	})
 
 	context.JSON(http.StatusOK, gin.H{"message": "Login Successful"})
 

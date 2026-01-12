@@ -1,6 +1,9 @@
 package routes
 
-import "github.com/gin-gonic/gin"
+import (
+	"example.com/my-ablum/middlewares"
+	"github.com/gin-gonic/gin"
+)
 
 func RegisterRoutes(server *gin.Engine) {
 	registerRoutesForUser(server)
@@ -13,5 +16,9 @@ func registerRoutesForUser(server *gin.Engine) {
 }
 
 func registerRoutesForFiles(server *gin.Engine) {
-	server.POST("/files", createFile)
+	authenticationRequiredGroup := server.Group("/")
+	authenticationRequiredGroup.Use(middlewares.Authentication)
+
+	authenticationRequiredGroup.POST("/files", createFile)
+
 }

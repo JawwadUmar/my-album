@@ -7,11 +7,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// type CreateFileRequest struct {
-// 	FileLink string `binding:"required"`
-// 	FileName string `binding:"required"`
-// }
-
 func createFile(context *gin.Context) {
 	var file models.Image
 	err := context.ShouldBindBodyWithJSON(&file)
@@ -24,7 +19,7 @@ func createFile(context *gin.Context) {
 		return
 	}
 
-	file.CreatedBy = 1
+	file.CreatedBy = context.GetInt64("userId")
 	err = file.Save()
 
 	if err != nil {
@@ -34,5 +29,7 @@ func createFile(context *gin.Context) {
 		})
 		return
 	}
+
+	context.JSON(http.StatusOK, gin.H{"File": file})
 
 }
