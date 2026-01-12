@@ -74,7 +74,9 @@ func createFileTable() {
 	query := `CREATE TABLE IF NOT EXISTS files (
 				id BIGSERIAL PRIMARY KEY,
 				file_name TEXT NOT NULL,
-				file_link TEXT NOT NULL,                  
+				file_size BIGINT NOT NULL,
+				mime_type TEXT NOT NULL,
+				storage_key TEXT NOT NULL,                  
 				created_by BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE, --ON DELETE CASCADE → if a user is deleted, their files are deleted automatically
 				created_at TIMESTAMPTZ DEFAULT now(),
 				updated_at TIMESTAMPTZ DEFAULT now()

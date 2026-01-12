@@ -1,8 +1,7 @@
 POST http://localhost:8081/files
-Content-Type: application/json
-Authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImZhdXppYUBnbWFpbC5jb20iLCJleHAiOjE3NjgyNTA0NjQsInVzZXJJZCI6MjB9.xSw7oMDASpgbGyb9tI3GqwYu8DrA9efjZhOk38uankk
+Content-Type: multipart/form-data
+Authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImZhdXppYUBnbWFpbC5jb20iLCJleHAiOjE3NjgyNTA0NjQsInVzZXJJZCI6MjB9.xSw7oMDASpgbGyb9tI3GqwYu8DrA9efjZhOk38uankkP
 
-{
-    "file_name": "fjnfjv",
-    "file_link": "fahad.com"
-}
+file=<actual file>
+
+

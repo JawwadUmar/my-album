@@ -1,35 +1,62 @@
 package routes
 
 import (
+	"fmt"
 	"net/http"
+	"os"
+	"path/filepath"
 
 	"example.com/my-ablum/models"
 	"github.com/gin-gonic/gin"
 )
 
 func createFile(context *gin.Context) {
-	var file models.Image
-	err := context.ShouldBindBodyWithJSON(&file)
+	fileHeader, err := context.FormFile("file")
 
 	if err != nil {
 		context.JSON(http.StatusBadRequest, gin.H{
-			"message": "Unable to pass the values into the file object",
-			"error":   err.Error(),
+			"message": "Unable to parse the file correctly",
 		})
+
 		return
 	}
 
-	file.CreatedBy = context.GetInt64("userId")
-	err = file.Save()
+	var fileModel models.File
+
+	fileModel.FileName = fileHeader.Filename
+	fileModel.FileSize = fileHeader.Size
+	fileModel.MimeType = fileHeader.Header.Get("Content-Type")
+	fileModel.CreatedBy = context.GetInt64("userId")
+
+	extension := filepath.Ext(fileHeader.Filename)
+
+	fileModel.StorageKey = fmt.Sprintf("%d/%s%s", fileModel.CreatedBy, fileModel.FileName, extension)
+
+	filePath := "./storage/" + fileModel.StorageKey
+
+	// Create folder if not exists (storage/1/, storage/2/, etc)
+	err = os.MkdirAll(filepath.Dir(filePath), 0755)
+	if err != nil {
+		context.JSON(500, gin.H{"error": "failed to create storage folder"})
+		return
+	}
+
+	// Save file to disk
+	err = context.SaveUploadedFile(fileHeader, filePath)
+	if err != nil {
+		context.JSON(500, gin.H{"error": "failed to save file"})
+		return
+	}
+
+	err = fileModel.Save()
 
 	if err != nil {
-		context.JSON(http.StatusInternalServerError, gin.H{
-			"message": "Unable to save the file",
-			"error":   err.Error(),
-		})
+		context.JSON(500, gin.H{"error": "database save failed"})
 		return
 	}
 
-	context.JSON(http.StatusOK, gin.H{"File": file})
-
+	context.JSON(200, gin.H{
+		"file_id":   fileModel.FileId,
+		"file_name": fileModel.FileName,
+	})
 }
