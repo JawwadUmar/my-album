@@ -2,8 +2,8 @@ POST http://localhost:8081/signup
 Content-Type: application/json
 
 {
-    "email": "fkvdik@gmail.com",
+    "email": "fauzia@gmail.com",
     "password": "123456789",
-    "first_name": "jawwad",
+    "first_name": "fauzia",
     "last_name": "umar"
 }

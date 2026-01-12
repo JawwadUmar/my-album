@@ -27,9 +27,15 @@ func (u *User) Save() error {
 				RETURNING id;
 	`
 
-	row := database.DB.QueryRow(query, u.Email, u.Password, u.FirstName, u.LastName, u.ProfilePic)
+	hashedPassword, err := utility.HashPassword(u.Password)
 
-	err := row.Scan(&u.UserId)
+	if err != nil {
+		return err
+	}
+
+	row := database.DB.QueryRow(query, u.Email, hashedPassword, u.FirstName, u.LastName, u.ProfilePic)
+
+	err = row.Scan(&u.UserId)
 	return err
 }
 
@@ -46,7 +52,7 @@ func (u *User) ValidateCredential() error {
 		return err
 	}
 
-	isValid := utility.Validate(u.Password, passwordHash)
+	isValid := utility.ValidateEnteredPassword(u.Password, passwordHash)
 
 	if !isValid {
 		return errors.New("Invalid Credential")
