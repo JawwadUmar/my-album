@@ -9,11 +9,11 @@ import (
 )
 
 type File struct {
-	FileId     int64
+	FileId     int64 `json:"file_id"`
 	FileName   string
 	FileSize   int64
 	MimeType   string
-	StorageKey string
+	StorageKey string `json:"storage_key"`
 	CreatedAt  time.Time
 	UpdatedAt  time.Time
 	CreatedBy  int64
