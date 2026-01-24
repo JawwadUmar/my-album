@@ -21,5 +21,6 @@ func registerRoutesForFiles(server *gin.Engine) {
 	authenticationRequiredGroup.Use(middlewares.Authentication)
 
 	authenticationRequiredGroup.POST("/files", createFile)
+	authenticationRequiredGroup.GET("/files", getFiles)
 
 }

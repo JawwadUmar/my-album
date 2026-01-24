@@ -1,0 +1,2 @@
+GET http://localhost:8081/files?limit=5&cursor=2
+Authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImZhdXppYUBnbWFpbC5jb20iLCJleHAiOjE3NjgyNTA0NjQsInVzZXJJZCI6MjB9.xSw7oMDASpgbGyb9tI3GqwYu8DrA9efjZhOk38uankkP

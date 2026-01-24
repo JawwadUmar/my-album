@@ -3,6 +3,7 @@ package routes
 import (
 	"fmt"
 	"net/http"
+	"strconv"
 
 	"example.com/my-ablum/models"
 	storage "example.com/my-ablum/storage/1"
@@ -66,5 +67,49 @@ func createFile(context *gin.Context) {
 	context.JSON(200, gin.H{
 		"file_id":   fileModel.FileId,
 		"file_name": fileModel.FileName,
+	})
+}
+
+// /files?cursor=105
+// /files?limit=20
+func getFiles(context *gin.Context) {
+
+	userId := context.GetInt64("userId")
+
+	cursorStr := context.Query("cursor")
+	var cursor int64 = 0 //if cursorStr is empty, default to 0 //we are using the basequery + limit
+
+	if cursorStr != "" {
+		var err error
+		cursor, err = strconv.ParseInt(cursorStr, 10, 64)
+		if err != nil {
+			context.JSON(http.StatusBadRequest, gin.H{"error": "Invalid cursor format"})
+			return
+		}
+	}
+
+	limitStr := context.DefaultQuery("limit", "12") // Default to 12 if missing
+	limit, err := strconv.ParseInt(limitStr, 10, 64)
+
+	if err != nil {
+		context.JSON(http.StatusBadRequest, gin.H{"message": "Invalid limit format", "error": err.Error()})
+		return
+	}
+
+	files, nextCursor, err := models.GetFilesByUserId(userId, cursor, limit)
+
+	if err != nil {
+
+		context.JSON(http.StatusInternalServerError,
+			gin.H{
+				"message": "Failed to fetch files",
+				"error":   err.Error(),
+			})
+		return
+	}
+
+	context.JSON(http.StatusOK, gin.H{
+		"data":        files,
+		"next_cursor": nextCursor,
 	})
 }
