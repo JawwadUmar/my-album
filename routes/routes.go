@@ -6,6 +6,7 @@ import (
 )
 
 func RegisterRoutes(server *gin.Engine) {
+	middlewares.EnableCors(server)
 	registerRoutesForUser(server)
 	registerRoutesForFiles(server)
 }
