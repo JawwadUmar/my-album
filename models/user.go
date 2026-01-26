@@ -10,7 +10,7 @@ import (
 
 // If a DB column allows NULL → use pointer in Go.
 type User struct {
-	UserId     int64
+	UserId     int64     `json:"user_id"`
 	Email      string    `json:"email" binding:"required"`
 	Password   string    `json:"password" binding:"required"`
 	FirstName  string    `json:"first_name" binding:"required"`
@@ -40,13 +40,18 @@ func (u *User) Save() error {
 }
 
 func (u *User) ValidateCredential() error {
-	query := `SELECT id, password_hash FROM users where email = $1`
+	// query := `SELECT id, password_hash FROM users where email = $1`
+
+	query := `SELECT id, first_name, last_name, password_hash, profile_pic, created_at, updated_at 
+				FROM users 
+				WHERE email = $1
+			`
 
 	row := database.DB.QueryRow(query, u.Email)
 
 	var passwordHash string
 
-	err := row.Scan(&u.UserId, &passwordHash) //userId is updated here
+	err := row.Scan(&u.UserId, &u.FirstName, &u.LastName, &passwordHash, &u.ProfilePic, &u.CreatedAt, &u.UpdatedAt) //userId is updated here
 
 	if err != nil {
 		return err
@@ -57,6 +62,8 @@ func (u *User) ValidateCredential() error {
 	if !isValid {
 		return errors.New("Invalid Credential")
 	}
+
+	u.Password = passwordHash
 
 	return nil
 }
