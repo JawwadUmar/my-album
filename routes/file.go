@@ -65,8 +65,8 @@ func createFile(context *gin.Context) {
 	}
 
 	context.JSON(200, gin.H{
-		"file_id":   fileModel.FileId,
-		"file_name": fileModel.FileName,
+		"message":       "file uploaded successfully",
+		"uploaded_file": fileModel,
 	})
 }
 
