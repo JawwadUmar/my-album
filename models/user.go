@@ -33,6 +33,7 @@ func (u *User) Save() error {
 		return err
 	}
 
+	//u.Profilepic is *string but thanks to go sqldatabase driver :)
 	row := database.DB.QueryRow(query, u.Email, hashedPassword, u.FirstName, u.LastName, u.ProfilePic)
 
 	err = row.Scan(&u.UserId)
