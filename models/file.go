@@ -32,6 +32,44 @@ func (f *File) Save() error {
 
 }
 
+func (f *File) Delete() error {
+	query := `DELETE FROM files
+				WHERE id = $1`
+
+	_, err := database.DB.Exec(query, f.FileId)
+
+	return err
+}
+
+func GetFileById(fileId int64) (*File, error) {
+	query := `SELECT id, file_name, file_size, mime_type, storage_key, created_at, updated_at, created_by
+        		FROM files
+       			WHERE id = $1
+			`
+
+	row := database.DB.QueryRow(query, fileId)
+
+	var f File
+
+	err := row.Scan(
+		&f.FileId,
+		&f.FileName,
+		&f.FileSize,
+		&f.MimeType,
+		&f.StorageKey,
+		&f.CreatedAt,
+		&f.UpdatedAt,
+		&f.CreatedBy,
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &f, err
+
+}
+
 func GetFilesByUserId(userId, cursor, limit int64) ([]File, int64, error) {
 
 	if limit <= 0 {

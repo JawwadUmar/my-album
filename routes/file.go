@@ -113,3 +113,48 @@ func getFiles(context *gin.Context) {
 		"next_cursor": nextCursor,
 	})
 }
+
+func deleteFiles(context *gin.Context) {
+	stringIdFile := context.Param("id")
+
+	userId := context.GetInt64("userId")
+	fileId, err := strconv.ParseInt(stringIdFile, 10, 64)
+
+	if err != nil {
+		context.JSON(http.StatusBadRequest, gin.H{
+			"message": "Some trouble in converting fileid to numbers",
+			"err":     err,
+		})
+
+		return
+	}
+
+	file, err := models.GetFileById(fileId)
+
+	if err != nil {
+		context.JSON(http.StatusInternalServerError, gin.H{
+			"message": "Could not fetch this file with this id",
+			"err":     err.Error(),
+		})
+
+		return
+	}
+
+	if file.CreatedBy != userId {
+		context.JSON(http.StatusUnauthorized, gin.H{"message": "This user is not allowed to delete this file"})
+		return
+	}
+
+	err = file.Delete()
+
+	if err != nil {
+		context.JSON(http.StatusInternalServerError, gin.H{
+			"message": "Problem deleting this file, try again later",
+			"err":     err.Error(),
+		})
+	}
+
+	context.JSON(http.StatusOK, gin.H{
+		"message": "Successfully deleted the file",
+	})
+}
