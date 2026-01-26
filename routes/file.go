@@ -154,6 +154,15 @@ func deleteFiles(context *gin.Context) {
 		})
 	}
 
+	err = storage.DeleteFileFromS3(file.StorageKey)
+
+	if err != nil {
+		context.JSON(http.StatusInternalServerError, gin.H{
+			"message": "The file wasn't able to be deleted in bucket",
+			"err":     err.Error(),
+		})
+	}
+
 	context.JSON(http.StatusOK, gin.H{
 		"message": "Successfully deleted the file",
 	})
