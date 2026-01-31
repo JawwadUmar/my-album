@@ -1,6 +1,8 @@
 package routes
 
 import (
+	"database/sql"
+	"fmt"
 	"net/http"
 
 	"example.com/my-ablum/models"
@@ -21,6 +23,10 @@ type SignupRequest struct {
 	LastName  string `form:"last_name" binding:"required"`
 }
 
+type GoogleLoginRequest struct {
+	Token string `json:"token" binding:"required"`
+}
+
 func signup(context *gin.Context) {
 	var signupRequest SignupRequest
 	err := context.ShouldBind(&signupRequest) //not with JSON as it will be a form data :)
@@ -35,7 +41,7 @@ func signup(context *gin.Context) {
 
 	var user models.User
 	user.Email = signupRequest.Email
-	user.Password = signupRequest.Password
+	user.Password = &signupRequest.Password
 	user.FirstName = signupRequest.FirstName
 	user.LastName = signupRequest.LastName
 
@@ -83,7 +89,7 @@ func login(context *gin.Context) {
 
 	var user models.User
 	user.Email = loginRequest.Email
-	user.Password = loginRequest.Password
+	user.Password = &loginRequest.Password
 
 	err = user.ValidateCredential() //UserId is updated here
 
@@ -110,6 +116,101 @@ func login(context *gin.Context) {
 		"message": "Successfully login",
 		"token":   token,
 		"user":    user,
+	})
+
+}
+
+func googleLogin(context *gin.Context) {
+	var req GoogleLoginRequest
+	err := context.ShouldBindJSON(&req)
+
+	if err != nil {
+		context.JSON(http.StatusBadRequest, gin.H{
+			"message": "Unable to pass the values into the GoogleLoginRequest",
+			"error":   err.Error(),
+		})
+
+		return
+	}
+
+	payload, err := utility.VerifyGoogkeIDTokenAndGetPayLoad(req.Token)
+
+	if err != nil {
+		context.JSON(401, gin.H{
+			"message": "Invalid google token",
+			"error":   err.Error(),
+		})
+
+		return
+	}
+
+	for key, value := range payload.Claims {
+		fmt.Printf("Key: %v, Value: %v\n", key, value)
+	}
+
+	// Helper function to safely get strings from claims
+	getClaim := func(key string) string {
+		if val, ok := payload.Claims[key]; ok && val != nil {
+			if str, ok := val.(string); ok {
+				return str
+			}
+		}
+		return ""
+	}
+
+	email := getClaim("email")
+	name := getClaim("name")
+	picture := getClaim("picture")
+	googleId := payload.Subject
+
+	user, err := models.GetUserModelByEmail(email)
+
+	if err == sql.ErrNoRows {
+		var userModel models.User
+		userModel.Email = email
+		userModel.FirstName, userModel.LastName = utility.SplitNameStrict(name)
+		userModel.ProfilePic = &picture
+		userModel.GoogleId = &googleId
+		userModel.Save()
+
+	} else if err != nil {
+		context.JSON(http.StatusInternalServerError, gin.H{
+			"message": "Some issue with the database",
+			"error":   err.Error(),
+		})
+
+		return
+	}
+
+	if user.GoogleId == nil {
+		user.GoogleId = &googleId
+		err = user.UpdateGoogleId()
+
+		if err != nil {
+			context.JSON(http.StatusInternalServerError, gin.H{
+				"message": "Some problem in updating the google id",
+				"error":   err.Error(),
+			})
+
+			return
+		}
+	}
+
+	token, err := utility.GenerateToken(user.Email, user.UserId)
+
+	if err != nil {
+		context.JSON(http.StatusInternalServerError, gin.H{
+			"message": "Some problem with generating the token",
+			"error":   err.Error(),
+		})
+
+		return
+	}
+
+	context.JSON(http.StatusOK, gin.H{
+		"message": "Google login successful",
+		"user":    user,
+		"token":   token,
 	})
 
 }

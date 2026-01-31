@@ -10,9 +10,10 @@ import (
 
 // If a DB column allows NULL → use pointer in Go.
 type User struct {
-	UserId     int64     `json:"user_id"`
-	Email      string    `json:"email" binding:"required"`
-	Password   string    `json:"password" binding:"required"`
+	UserId     int64   `json:"user_id"`
+	Email      string  `json:"email" binding:"required"`
+	Password   *string `json:"password" binding:"required"`
+	GoogleId   *string
 	FirstName  string    `json:"first_name" binding:"required"`
 	LastName   string    `json:"last_name" binding:"required"`
 	ProfilePic *string   `json:"profile_pic"`
@@ -22,19 +23,25 @@ type User struct {
 
 func (u *User) Save() error {
 	query := `
-				INSERT INTO users (email, password_hash, first_name, last_name, profile_pic)
-				VALUES($1, $2, $3, $4, $5)
+				INSERT INTO users (email, password_hash, first_name, last_name, profile_pic, google_id)
+				VALUES($1, $2, $3, $4, $5, $6)
 				RETURNING id;
 	`
 
-	hashedPassword, err := utility.HashPassword(u.Password)
+	var hashedPassword *string
+	var err error
 
-	if err != nil {
-		return err
+	if u.Password != nil {
+
+		hashedPassword, err = utility.HashPassword(*u.Password)
+
+		if err != nil {
+			return err
+		}
 	}
 
 	//u.Profilepic is *string but thanks to go sqldatabase driver :)
-	row := database.DB.QueryRow(query, u.Email, hashedPassword, u.FirstName, u.LastName, u.ProfilePic)
+	row := database.DB.QueryRow(query, u.Email, hashedPassword, u.FirstName, u.LastName, u.ProfilePic, u.GoogleId)
 
 	err = row.Scan(&u.UserId)
 	return err
@@ -58,13 +65,50 @@ func (u *User) ValidateCredential() error {
 		return err
 	}
 
-	isValid := utility.ValidateEnteredPassword(u.Password, passwordHash)
+	isValid := utility.ValidateEnteredPassword(*u.Password, passwordHash)
 
 	if !isValid {
 		return errors.New("Invalid Credential")
 	}
 
-	u.Password = passwordHash
+	u.Password = &passwordHash
 
 	return nil
+}
+
+func (u *User) UpdateGoogleId() error {
+	query := `
+		UPDATE users
+		SET google_id = $1
+		WHERE email = $2
+		RETURNING id;
+	`
+	row := database.DB.QueryRow(query, u.GoogleId, u.Email)
+	err := row.Scan(&u.UserId)
+	return err
+}
+
+func GetUserModelByEmail(email string) (User, error) {
+	query := `SELECT id, email, first_name, last_name, password_hash, profile_pic, created_at, updated_at, google_id
+			  FROM users
+			  WHERE email = $1
+	`
+
+	row := database.DB.QueryRow(query, email)
+
+	var user User
+
+	err := row.Scan(
+		&user.UserId,
+		&user.Email,
+		&user.FirstName,
+		&user.LastName,
+		&user.Password,
+		&user.ProfilePic,
+		&user.CreatedAt,
+		&user.UpdatedAt,
+		&user.GoogleId,
+	)
+
+	return user, err
 }
