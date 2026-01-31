@@ -57,7 +57,8 @@ func createUserTable() {
 				email VARCHAR(255) NOT NULL UNIQUE,
 				first_name VARCHAR(255) NOT NULL,
 				last_name VARCHAR(255) NOT NULL,
-				password_hash TEXT NOT NULL,
+				password_hash TEXT,
+				google_id TEXT,
 				profile_pic TEXT,                  -- store URL or path
 				created_at TIMESTAMPTZ DEFAULT now(),
 				updated_at TIMESTAMPTZ DEFAULT now()
