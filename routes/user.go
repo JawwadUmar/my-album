@@ -144,23 +144,17 @@ func googleLogin(context *gin.Context) {
 		return
 	}
 
-	for key, value := range payload.Claims {
+	claims := payload.Claims
+
+	for key, value := range claims {
 		fmt.Printf("Key: %v, Value: %v\n", key, value)
 	}
 
-	// Helper function to safely get strings from claims
-	getClaim := func(key string) string {
-		if val, ok := payload.Claims[key]; ok && val != nil {
-			if str, ok := val.(string); ok {
-				return str
-			}
-		}
-		return ""
-	}
+	// Helper function to safely get strings from claims is utility.GetClaim
 
-	email := getClaim("email")
-	name := getClaim("name")
-	picture := getClaim("picture")
+	email := utility.GetClaim("email", claims)
+	name := utility.GetClaim("name", claims)
+	picture := utility.GetClaim("picture", claims)
 	googleId := payload.Subject
 
 	user, err := models.GetUserModelByEmail(email)

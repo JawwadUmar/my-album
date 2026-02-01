@@ -2,8 +2,6 @@ package utility
 
 import (
 	"strings"
-
-	"cloud.google.com/go/auth/credentials/idtoken"
 )
 
 func SplitNameStrict(fullName string) (string, string) {
@@ -19,8 +17,9 @@ func SplitNameStrict(fullName string) (string, string) {
 }
 
 // Helper function to safely get strings from claims
-func GetClaim(key string, payload *idtoken.Payload) string {
-	if val, ok := payload.Claims[key]; ok && val != nil {
+func GetClaim(key string, claims map[string]interface{}) string {
+
+	if val, ok := claims[key]; ok && val != nil {
 		if str, ok := val.(string); ok {
 			return str
 		}
