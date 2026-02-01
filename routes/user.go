@@ -157,16 +157,26 @@ func googleLogin(context *gin.Context) {
 	picture := utility.GetClaim("picture", claims)
 	googleId := payload.Subject
 
-	user, err := models.GetUserModelByEmail(email)
+	var userModel models.User
+	userModel, err = models.GetUserModelByEmail(email)
 
 	if err == sql.ErrNoRows {
-		var userModel models.User
 		userModel.Email = email
 		userModel.FirstName, userModel.LastName = utility.SplitNameStrict(name)
 		userModel.ProfilePic = &picture
 		userModel.GoogleId = &googleId
-		userModel.Save()
+		err = userModel.Save()
 
+		if err != nil {
+			context.JSON(http.StatusInternalServerError, gin.H{
+				"message": "Problem in saving the user",
+				"error":   err.Error(),
+			})
+
+			fmt.Printf("We got the error type: %v\n", err)
+
+			return
+		}
 	} else if err != nil {
 		context.JSON(http.StatusInternalServerError, gin.H{
 			"message": "Some issue with the database",
@@ -176,9 +186,9 @@ func googleLogin(context *gin.Context) {
 		return
 	}
 
-	if user.GoogleId == nil {
-		user.GoogleId = &googleId
-		err = user.UpdateGoogleId()
+	if userModel.GoogleId == nil {
+		userModel.GoogleId = &googleId
+		err = userModel.UpdateGoogleId()
 
 		if err != nil {
 			context.JSON(http.StatusInternalServerError, gin.H{
@@ -190,7 +200,7 @@ func googleLogin(context *gin.Context) {
 		}
 	}
 
-	token, err := utility.GenerateToken(user.Email, user.UserId)
+	token, err := utility.GenerateToken(userModel.Email, userModel.UserId)
 
 	if err != nil {
 		context.JSON(http.StatusInternalServerError, gin.H{
@@ -203,7 +213,7 @@ func googleLogin(context *gin.Context) {
 
 	context.JSON(http.StatusOK, gin.H{
 		"message": "Google login successful",
-		"user":    user,
+		"user":    userModel,
 		"token":   token,
 	})
 
