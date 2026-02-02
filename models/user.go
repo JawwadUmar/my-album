@@ -112,3 +112,40 @@ func GetUserModelByEmail(email string) (User, error) {
 
 	return user, err
 }
+
+func GetUserModelById(id int64) (User, error) {
+	query := `SELECT id, email, first_name, last_name, password_hash, profile_pic, created_at, updated_at, google_id
+			  FROM users
+			  WHERE id = $1
+	`
+
+	row := database.DB.QueryRow(query, id)
+
+	var user User
+
+	err := row.Scan(
+		&user.UserId,
+		&user.Email,
+		&user.FirstName,
+		&user.LastName,
+		&user.Password,
+		&user.ProfilePic,
+		&user.CreatedAt,
+		&user.UpdatedAt,
+		&user.GoogleId,
+	)
+
+	return user, err
+}
+
+func (u *User) Update() error {
+	query := `UPDATE users
+			SET first_name  = COALESCE($1, first_name),
+				last_name   = COALESCE($2, last_name),
+				profile_pic = COALESCE($3, profile_pic)
+				WHERE id = $4`
+
+	_, err := database.DB.Exec(query, u.FirstName, u.LastName, u.ProfilePic, u.UserId)
+
+	return err
+}

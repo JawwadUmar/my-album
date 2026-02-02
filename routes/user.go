@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"net/http"
+	"strconv"
 
 	"example.com/my-ablum/models"
 	storage "example.com/my-ablum/storage/1"
@@ -25,6 +26,11 @@ type SignupRequest struct {
 
 type GoogleLoginRequest struct {
 	Token string `json:"token" binding:"required"`
+}
+
+type UpdateUserRequest struct {
+	FirstName *string `form:"first_name"`
+	LastName  *string `form:"last_name"`
 }
 
 func signup(context *gin.Context) {
@@ -146,9 +152,9 @@ func googleLogin(context *gin.Context) {
 
 	claims := payload.Claims
 
-	for key, value := range claims {
-		fmt.Printf("Key: %v, Value: %v\n", key, value)
-	}
+	// for key, value := range claims {
+	// 	fmt.Printf("Key: %v, Value: %v\n", key, value)
+	// }
 
 	// Helper function to safely get strings from claims is utility.GetClaim
 
@@ -215,6 +221,84 @@ func googleLogin(context *gin.Context) {
 		"message": "Google login successful",
 		"user":    userModel,
 		"token":   token,
+	})
+
+}
+
+func updateProfile(context *gin.Context) {
+	id, err := strconv.ParseInt(context.Param("id"), 10, 64)
+
+	if err != nil {
+		context.JSON(http.StatusBadRequest, gin.H{
+			"message": "Unable to retieve the id from context",
+			"error":   err.Error(),
+		})
+		return
+	}
+
+	userModel, err := models.GetUserModelById(id)
+
+	if err != nil {
+		context.JSON(http.StatusNotFound, gin.H{
+			"message": "Unable find user with this id",
+			"error":   err.Error(),
+		})
+		return
+	}
+
+	var updateUserReq UpdateUserRequest
+
+	err = context.ShouldBind(&updateUserReq)
+
+	fileHeader, err := context.FormFile("profile_pic")
+
+	if err == nil {
+
+		if userModel.ProfilePic != nil {
+			err = storage.DeleteFileFromS3(*userModel.ProfilePic)
+
+			if err != nil {
+				context.JSON(http.StatusInternalServerError, gin.H{
+					"message": "Failed to delete existing profile picture",
+					"error":   err.Error(),
+				})
+				return
+			}
+		}
+
+		storageKey := "profile-pics/" + userModel.Email
+		err = storage.StoreFileInS3(fileHeader, storageKey)
+		if err != nil {
+			context.JSON(http.StatusInternalServerError, gin.H{
+				"message": "Failed to upload profile picture",
+			})
+			return
+		}
+
+		userModel.ProfilePic = &storageKey
+	}
+
+	if updateUserReq.FirstName != nil {
+		userModel.FirstName = *updateUserReq.FirstName
+	}
+
+	if updateUserReq.LastName != nil {
+		userModel.LastName = *updateUserReq.LastName
+	}
+
+	err = userModel.Update()
+
+	if err != nil {
+		context.JSON(http.StatusInternalServerError, gin.H{
+			"message": "Some problem with database in updating",
+			"error":   err.Error(),
+		})
+		return
+	}
+
+	context.JSON(http.StatusOK, gin.H{
+		"message": "Update successful",
+		"user":    userModel,
 	})
 
 }
