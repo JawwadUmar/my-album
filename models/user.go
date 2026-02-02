@@ -149,3 +149,18 @@ func (u *User) Update() error {
 
 	return err
 }
+
+func GetUserStorage(userId int64) (int64, error) {
+	var total int64
+	var err error
+
+	query := `
+        SELECT COALESCE(SUM(file_size), 0)
+        FROM files
+        WHERE created_by = $1
+    `
+	row := database.DB.QueryRow(query, userId)
+	err = row.Scan(&total)
+
+	return total, err
+}

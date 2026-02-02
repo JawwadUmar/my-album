@@ -302,3 +302,32 @@ func updateProfile(context *gin.Context) {
 	})
 
 }
+
+func getStorageUse(context *gin.Context) {
+	userId, err := strconv.ParseInt(context.Param("id"), 10, 64)
+
+	if err != nil {
+		context.JSON(http.StatusBadRequest, gin.H{
+			"message": "Unable to retieve the id from context",
+			"error":   err.Error(),
+		})
+		return
+	}
+
+	storageUse, err := models.GetUserStorage(userId)
+
+	if err != nil {
+		context.JSON(http.StatusInternalServerError, gin.H{
+			"message": "Some problem with DB",
+			"error":   err.Error(),
+		})
+
+		return
+	}
+
+	context.JSON(http.StatusOK, gin.H{
+		"message":    "Got the storage",
+		"storageUse": storageUse,
+	})
+
+}
