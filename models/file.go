@@ -9,14 +9,14 @@ import (
 )
 
 type File struct {
-	FileId     int64 `json:"file_id"`
-	FileName   string
-	FileSize   int64
-	MimeType   string
-	StorageKey string `json:"storage_key"`
-	CreatedAt  time.Time
-	UpdatedAt  time.Time
-	CreatedBy  int64
+	FileId     int64     `json:"file_id"`
+	FileName   string    `json:"file_name"`
+	FileSize   int64     `json:"file_size"`
+	MimeType   string    `json:"mime_type"`
+	StorageKey string    `json:"storage_key"`
+	CreatedAt  time.Time `json:"created_at"`
+	UpdatedAt  time.Time `json:"updated_at"`
+	CreatedBy  int64     `json:"created_by"`
 }
 
 func (f *File) Save() error {
