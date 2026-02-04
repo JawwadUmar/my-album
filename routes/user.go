@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"fmt"
 	"net/http"
-	"strconv"
 
 	"example.com/my-ablum/models"
 	storage "example.com/my-ablum/storage/1"
@@ -226,17 +225,8 @@ func googleLogin(context *gin.Context) {
 }
 
 func updateProfile(context *gin.Context) {
-	id, err := strconv.ParseInt(context.Param("id"), 10, 64)
-
-	if err != nil {
-		context.JSON(http.StatusBadRequest, gin.H{
-			"message": "Unable to retieve the id from context",
-			"error":   err.Error(),
-		})
-		return
-	}
-
-	userModel, err := models.GetUserModelById(id)
+	userId := context.GetInt64("userId")
+	userModel, err := models.GetUserModelById(userId)
 
 	if err != nil {
 		context.JSON(http.StatusNotFound, gin.H{
@@ -275,6 +265,7 @@ func updateProfile(context *gin.Context) {
 			return
 		}
 
+		fmt.Printf("The user profile pic is %v", *userModel.ProfilePic)
 		userModel.ProfilePic = &storageKey
 	}
 
@@ -304,15 +295,7 @@ func updateProfile(context *gin.Context) {
 }
 
 func getStorageUse(context *gin.Context) {
-	userId, err := strconv.ParseInt(context.Param("id"), 10, 64)
-
-	if err != nil {
-		context.JSON(http.StatusBadRequest, gin.H{
-			"message": "Unable to retieve the id from context",
-			"error":   err.Error(),
-		})
-		return
-	}
+	userId := context.GetInt64("userId")
 
 	storageUse, err := models.GetUserStorage(userId)
 

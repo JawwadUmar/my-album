@@ -24,7 +24,7 @@ func registerRoutesForFiles(server *gin.Engine) {
 	authenticationRequiredGroup.POST("/files", createFile)
 	authenticationRequiredGroup.GET("/files", getFiles)
 	authenticationRequiredGroup.DELETE("/files/:id", deleteFiles)
-	authenticationRequiredGroup.PATCH("/profile/:id", updateProfile)
-	authenticationRequiredGroup.GET("/profile/:id", getStorageUse)
+	authenticationRequiredGroup.PATCH("/profile", updateProfile)
+	authenticationRequiredGroup.GET("/profile", getStorageUse)
 
 }
