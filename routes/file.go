@@ -6,7 +6,7 @@ import (
 	"strconv"
 
 	"example.com/my-ablum/models"
-	storage "example.com/my-ablum/storage/1"
+	storage "example.com/my-ablum/storage"
 	"github.com/gin-gonic/gin"
 )
 

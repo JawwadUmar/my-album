@@ -6,7 +6,7 @@ import (
 	"net/http"
 
 	"example.com/my-ablum/models"
-	storage "example.com/my-ablum/storage/1"
+	storage "example.com/my-ablum/storage"
 	"example.com/my-ablum/utility"
 	"github.com/gin-gonic/gin"
 )

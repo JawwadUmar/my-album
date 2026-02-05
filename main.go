@@ -3,7 +3,7 @@ package main
 import (
 	"example.com/my-ablum/database"
 	"example.com/my-ablum/routes"
-	storage "example.com/my-ablum/storage/1"
+	storage "example.com/my-ablum/storage"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 )
