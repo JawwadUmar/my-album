@@ -309,8 +309,8 @@ func getStorageUse(context *gin.Context) {
 	}
 
 	context.JSON(http.StatusOK, gin.H{
-		"message":    "Got the storage",
-		"storageUse": storageUse,
+		"message":     "Got the storage",
+		"storage_use": storageUse,
 	})
 
 }
