@@ -1,6 +1,7 @@
 package routes
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -27,6 +28,28 @@ func createFile(context *gin.Context) {
 	fileModel.FileSize = fileHeader.Size
 	fileModel.MimeType = fileHeader.Header.Get("Content-Type")
 	fileModel.CreatedBy = context.GetInt64("userId")
+
+	currentUserStorage, err := models.GetUserStorage(fileModel.CreatedBy)
+
+	if err != nil {
+		context.JSON(http.StatusInternalServerError, gin.H{
+			"message": "Problem in fetching the used storage",
+			"error":   err.Error(),
+		})
+
+		return
+	}
+
+	allowedStorage, err := models.GetAllowedUserStorage(fileModel.CreatedBy)
+
+	if currentUserStorage+fileModel.FileSize > allowedStorage {
+		context.JSON(http.StatusInsufficientStorage, gin.H{
+			"message": "Insufficient Storage",
+			"error":   errors.New("Insufficient Storage").Error(),
+		})
+
+		return
+	}
 
 	fileModel.StorageKey = fmt.Sprintf("%d/%s", fileModel.CreatedBy, fileModel.FileName)
 

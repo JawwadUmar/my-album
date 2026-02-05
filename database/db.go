@@ -60,6 +60,7 @@ func createUserTable() {
 				password_hash TEXT,
 				google_id TEXT,
 				profile_pic TEXT,                  -- store URL or path
+				allowed_storage BIGINT DEFAULT 209715200,
 				created_at TIMESTAMPTZ DEFAULT now(),
 				updated_at TIMESTAMPTZ DEFAULT now()
 			);`

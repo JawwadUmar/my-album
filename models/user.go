@@ -10,15 +10,16 @@ import (
 
 // If a DB column allows NULL → use pointer in Go.
 type User struct {
-	UserId     int64   `json:"user_id"`
-	Email      string  `json:"email" binding:"required"`
-	Password   *string `json:"password" binding:"required"`
-	GoogleId   *string
-	FirstName  string    `json:"first_name" binding:"required"`
-	LastName   string    `json:"last_name" binding:"required"`
-	ProfilePic *string   `json:"profile_pic"`
-	CreatedAt  time.Time //YYYY-MM-DD HH:MM:SS.microseconds stored in DB
-	UpdatedAt  time.Time
+	UserId         int64   `json:"user_id"`
+	Email          string  `json:"email" binding:"required"`
+	Password       *string `json:"password" binding:"required"`
+	GoogleId       *string
+	FirstName      string    `json:"first_name" binding:"required"`
+	LastName       string    `json:"last_name" binding:"required"`
+	ProfilePic     *string   `json:"profile_pic"`
+	AllowedStorage int64     `json:"allowed_storage"`
+	CreatedAt      time.Time //YYYY-MM-DD HH:MM:SS.microseconds stored in DB
+	UpdatedAt      time.Time
 }
 
 func (u *User) Save() error {
@@ -50,7 +51,7 @@ func (u *User) Save() error {
 func (u *User) ValidateCredential() error {
 	// query := `SELECT id, password_hash FROM users where email = $1`
 
-	query := `SELECT id, first_name, last_name, password_hash, profile_pic, created_at, updated_at 
+	query := `SELECT id, first_name, last_name, password_hash, profile_pic, created_at, updated_at, allowed_storage 
 				FROM users 
 				WHERE email = $1
 			`
@@ -59,7 +60,7 @@ func (u *User) ValidateCredential() error {
 
 	var passwordHash string
 
-	err := row.Scan(&u.UserId, &u.FirstName, &u.LastName, &passwordHash, &u.ProfilePic, &u.CreatedAt, &u.UpdatedAt) //userId is updated here
+	err := row.Scan(&u.UserId, &u.FirstName, &u.LastName, &passwordHash, &u.ProfilePic, &u.CreatedAt, &u.UpdatedAt, &u.AllowedStorage) //userId is updated here
 
 	if err != nil {
 		return err
@@ -89,7 +90,7 @@ func (u *User) UpdateGoogleId() error {
 }
 
 func GetUserModelByEmail(email string) (User, error) {
-	query := `SELECT id, email, first_name, last_name, password_hash, profile_pic, created_at, updated_at, google_id
+	query := `SELECT id, email, first_name, last_name, password_hash, profile_pic, created_at, updated_at, google_id, allowed_storage
 			  FROM users
 			  WHERE email = $1
 	`
@@ -108,13 +109,14 @@ func GetUserModelByEmail(email string) (User, error) {
 		&user.CreatedAt,
 		&user.UpdatedAt,
 		&user.GoogleId,
+		&user.AllowedStorage,
 	)
 
 	return user, err
 }
 
 func GetUserModelById(id int64) (User, error) {
-	query := `SELECT id, email, first_name, last_name, password_hash, profile_pic, created_at, updated_at, google_id
+	query := `SELECT id, email, first_name, last_name, password_hash, profile_pic, created_at, updated_at, google_id, allowed_storage
 			  FROM users
 			  WHERE id = $1
 	`
@@ -133,6 +135,7 @@ func GetUserModelById(id int64) (User, error) {
 		&user.CreatedAt,
 		&user.UpdatedAt,
 		&user.GoogleId,
+		&user.AllowedStorage,
 	)
 
 	return user, err
@@ -163,4 +166,19 @@ func GetUserStorage(userId int64) (int64, error) {
 	err = row.Scan(&total)
 
 	return total, err
+}
+
+func GetAllowedUserStorage(userId int64) (int64, error) {
+	var allowedStorage int64
+	var err error
+
+	query := `
+        SELECT COALESCE(allowed_storage, 0)
+        FROM users
+        WHERE id = $1
+    `
+	row := database.DB.QueryRow(query, userId)
+	err = row.Scan(&allowedStorage)
+
+	return allowedStorage, err
 }
