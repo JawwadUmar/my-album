@@ -2,6 +2,7 @@ package routes
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 	"net/http"
 
@@ -49,6 +50,16 @@ func signup(context *gin.Context) {
 	user.Password = &signupRequest.Password
 	user.FirstName = signupRequest.FirstName
 	user.LastName = signupRequest.LastName
+
+	_, err = models.GetUserModelByEmail(user.Email)
+
+	if err == nil {
+		context.JSON(http.StatusConflict, gin.H{
+			"message": "User Already Exists",
+			"error":   errors.New("User Already Exists").Error(),
+		})
+		return
+	}
 
 	fileHeader, err := context.FormFile("profile_pic")
 
@@ -265,7 +276,7 @@ func updateProfile(context *gin.Context) {
 			return
 		}
 
-		fmt.Printf("The user profile pic is %v", *userModel.ProfilePic)
+		// fmt.Printf("The user profile pic is %v", userModel.ProfilePic)
 		userModel.ProfilePic = &storageKey
 	}
 
