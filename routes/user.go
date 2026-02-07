@@ -29,8 +29,9 @@ type GoogleLoginRequest struct {
 }
 
 type UpdateUserRequest struct {
-	FirstName *string `form:"first_name"`
-	LastName  *string `form:"last_name"`
+	FirstName        *string `form:"first_name"`
+	LastName         *string `form:"last_name"`
+	DeleteProfilePic *string `form:"delete_profile_pic"`
 }
 
 func signup(context *gin.Context) {
@@ -162,12 +163,6 @@ func googleLogin(context *gin.Context) {
 
 	claims := payload.Claims
 
-	// for key, value := range claims {
-	// 	fmt.Printf("Key: %v, Value: %v\n", key, value)
-	// }
-
-	// Helper function to safely get strings from claims is utility.GetClaim
-
 	email := utility.GetClaim("email", claims)
 	name := utility.GetClaim("name", claims)
 	picture := utility.GetClaim("picture", claims)
@@ -251,9 +246,24 @@ func updateProfile(context *gin.Context) {
 
 	err = context.ShouldBind(&updateUserReq)
 
+	if err != nil {
+		context.JSON(http.StatusBadRequest, gin.H{
+			"message": "Unable to pass the values into the updateProfile",
+			"error":   err.Error(),
+		})
+
+		return
+	}
+
+	var shouldDeleteProfilePic bool = true
+
+	if updateUserReq.DeleteProfilePic == nil || *updateUserReq.DeleteProfilePic == "false" {
+		shouldDeleteProfilePic = false
+	}
+
 	fileHeader, err := context.FormFile("profile_pic")
 
-	if err == nil {
+	if err == nil && shouldDeleteProfilePic == false {
 
 		if userModel.ProfilePic != nil {
 			err = storage.DeleteFileFromS3(*userModel.ProfilePic)
@@ -278,6 +288,21 @@ func updateProfile(context *gin.Context) {
 
 		// fmt.Printf("The user profile pic is %v", userModel.ProfilePic)
 		userModel.ProfilePic = &storageKey
+	} else if shouldDeleteProfilePic == true {
+
+		if userModel.ProfilePic != nil {
+			err = storage.DeleteFileFromS3(*userModel.ProfilePic)
+
+			if err != nil {
+				context.JSON(http.StatusInternalServerError, gin.H{
+					"message": "Failed to the profile picture",
+					"error":   err.Error(),
+				})
+				return
+			}
+		}
+
+		userModel.ProfilePic = nil
 	}
 
 	if updateUserReq.FirstName != nil {

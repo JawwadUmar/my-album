@@ -143,9 +143,9 @@ func GetUserModelById(id int64) (User, error) {
 
 func (u *User) Update() error {
 	query := `UPDATE users
-			SET first_name  = COALESCE($1, first_name),
-				last_name   = COALESCE($2, last_name),
-				profile_pic = COALESCE($3, profile_pic)
+			SET first_name  = $1,
+				last_name   = $2,
+				profile_pic = $3
 				WHERE id = $4`
 
 	_, err := database.DB.Exec(query, u.FirstName, u.LastName, u.ProfilePic, u.UserId)
